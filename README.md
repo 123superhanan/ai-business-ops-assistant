@@ -1,306 +1,171 @@
 
-
 ```markdown
 # AI Business Operations Assistant
 
-An AI assistant for business operations, built in stages: a **support-ticket
-classifier** (classical ML + PyTorch), a **RAG pipeline** over company policy,
-and a **FastAPI** service tying them together.
+An AI assistant for business operations. Built in stages:
 
-This README documents the **ML dataset and experiment plan** that the
-classifier milestone follows. The API and RAG layers are described at the end.
+1. Support-ticket classifier (classical ML + PyTorch)
+2. RAG pipeline over policy documents
+3. FastAPI service
 
----
-
-## 1. Project structure
-
-```
-ai-business-ops-assistant/
-├── data/
-│   └── tickets.csv              # labelled support tickets (text, category)
-├── buisness_ML/
-│   └── training/
-│       └── train_DL.ipynb       # PyTorch MLP training notebook
-├── business_rag/                # RAG over policy documents (later milestone)
-├── app.py                       # FastAPI service (later milestone)
-├── main.py                      # entrypoint (later milestone)
-└── README.md
-```
-
-The four sub-projects are intentionally kept separate:
-
-| Component | Input | Output |
-|---|---|---|
-| **Classical ML** (TF-IDF + LogisticRegression) | ticket text | category label |
-| **PyTorch MLP** | TF-IDF features | category label |
-| **RAG** | policy markdown/text | retrieved answer |
-| **FastAPI** | HTTP requests | JSON responses |
-
-Each is a self-contained exercise — the same CSV does not need to feed every
-model.
+This README covers the ML dataset and experiment plan. RAG and API come later.
 
 ---
 
-## 2. The dataset
+## Structure
+
+```
+data/tickets.csv              labelled tickets (text, category)
+buisness_ML/training/         PyTorch training notebooks
+business_rag/                 RAG pipeline (later)
+app.py, main.py               FastAPI service (later)
+```
+
+---
+
+## Dataset
 
 `data/tickets.csv` has two columns:
 
-| Column | Role | Description |
-|---|---|---|
-| `ticket_text` | Feature (X) | The customer's message |
-| `category` | Target (y) | One of `billing`, `refund`, `technical`, `shipping` |
+- `ticket_text` — the customer message (feature, X)
+- `category` — one of `billing`, `refund`, `technical`, `shipping` (target, y)
 
 ### Labeling rules
 
-Ambiguous tickets overlap by nature. These rules are applied consistently
-across every row, and any new row must follow them:
+Ambiguous tickets overlap. These rules are applied to every row and any new row must follow them.
 
-| Situation | Label |
-|---|---|
-| Asks for money back, return, damaged/defective item, refund status | `refund` |
-| Disputes a charge, invoice, subscription payment, unexpected fee | `billing` |
-| Login, password, app/site/API error, crash, feature broken | `technical` |
-| Delivery, tracking, courier, lost / late / wrong-address parcel | `shipping` |
-| **Technical problem on a refund/billing page** (e.g. "refund page shows error") | `technical` |
-| **Refund eligibility / where-is-my-refund** | `refund` |
-| **"Charged twice and want money back"** (payment dispute) | `billing` |
-| **Cancel a subscription before the next payment** | `billing` |
+```
+Asks for money back, return, damaged item, refund status   -> refund
+Disputes a charge, invoice, subscription, extra fee        -> billing
+Login, password, app/site error, crash, feature broken     -> technical
+Delivery, tracking, courier, lost or late parcel           -> shipping
 
-> Rule of thumb: *"Is the user asking for money back for a product?" → `refund`.
-> "Is the user disputing a charge/invoice?" → `billing`.
-> "Is something broken?" → `technical`.
-> "Is a parcel involved?" → `shipping`.*
+Technical problem on a refund or billing page              -> technical
+Refund eligibility or "where is my refund"                 -> refund
+"Charged twice and want money back" (payment dispute)      -> billing
+Cancel a subscription before the next payment              -> billing
+```
 
-The last rules exist because they were the cases we actively got wrong the
-first time. Writing the policy down **before** adding rows prevents
-inconsistent labels — which would silently cap model accuracy no matter how
-good the classifier is.
+Rule of thumb:
 
-### Difficulty level
+```
+Money back for a product?  -> refund
+Disputing a charge?        -> billing
+Something broken?          -> technical
+A parcel involved?         -> shipping
+```
 
-This dataset targets **Level 2 — realistic**. It contains:
+Rules are written down before adding rows so labels stay consistent. Inconsistent labels cap model accuracy no matter how good the classifier is.
 
-- ambiguous requests and wording variation,
-- overlapping categories (see the rules above),
-- a deliberately imbalanced class distribution (see below),
-- a handful of near-duplicate paraphrases.
+### Difficulty
 
-It intentionally does **not** include random typos or contradictory labels —
-those test tolerance to bad data, not ML understanding.
+This dataset targets **Level 2 (realistic)**: ambiguous wording, overlapping categories, deliberate class imbalance, some near-duplicate paraphrases. It does **not** include random typos or contradictory labels.
 
-### Class distribution (imbalanced by design)
+### Class distribution (imbalanced on purpose)
 
-| Category | Target rows | Share |
-|---|---|---|
-| `billing` | 350 | 35 % |
-| `refund` | 250 | 25 % |
-| `technical` | 250 | 25 % |
-| `shipping` | 150 | 15 % |
-| **Total** | **1,000** | 100 % |
+```
+billing     350    35%
+refund      250    25%
+technical   250    25%
+shipping    150    15%
+-----------------------
+total      1000   100%
+```
 
-The imbalance is deliberate: it forces us to report **macro-F1** and
-**per-class recall**, not just accuracy. A model that predicts `billing` for
-everything scores 35 % accuracy but 0 recall on the other three classes — and
-accuracy alone would hide that.
+The imbalance forces macro-F1 and per-class recall to be reported, not just accuracy. A model that predicts `billing` for everything scores 35% accuracy but 0 recall on the other classes.
 
-> **Current status:** the working dataset is the 160-row balanced seed
-> (40 rows per class) used during the refresher. The full 1,000-row
-> imbalanced version will be generated by `scripts/make_tickets.py` once the
-> pipeline is validated end to end.
+**Current status:** working with a 160-row balanced seed (40 per class). The full 1,000-row version is generated by `scripts/make_tickets.py` once the pipeline is validated.
 
 ---
 
-## 3. Splitting
+## Splitting
 
-The full dataset is split **70 % train / 15 % validation / 15 % test**:
+70% train / 15% validation / 15% test.
 
 - **Train** — fit the model.
-- **Validation** — tune hyperparameters (regularisation `C`, `ngram_range`,
-  `class_weight`). Never tune on test.
-- **Test** — evaluated **once** at the end, after configuration is frozen.
+- **Validation** — tune hyperparameters only.
+- **Test** — evaluated once at the end, never tuned on.
 
-Two constraints:
+Two rules:
 
-1. **Stratify** the split by `category` so every split has every class in the
-   same proportion. At small class counts (e.g. `shipping` = 150 → 22 in test),
-   stratification is required; without it a split can end up with zero examples
-   of a class.
-2. **Keep near-duplicates in the same split.** Paraphrases ("I want a refund for
-   my cancelled order" / "I want to cancel my order and get my money back") are
-   near-identical from the model's point of view. If one lands in train and one
-   in test, the score is inflated by memorisation, not generalisation.
-
-   Implementation: fingerprint each ticket (sorted lowercase word set), then
-   use `StratifiedGroupKFold` (or `GroupShuffleSplit`) with the fingerprint as
-   the group key.
+1. **Stratify** by `category` so every split has every class in the same proportion.
+2. **Group near-duplicates** (paraphrases of the same ticket) into the same split. Otherwise the test score is inflated by memorisation. Use a text fingerprint (sorted lowercase word set) as the group key with `StratifiedGroupKFold`.
 
 ---
 
-## 4. Experiment plan
+## Experiment plan (in order)
 
-Work through these **in order**. Do not skip ahead — each step's finding
-informs the next.
-
-### 4.1 Baseline
-
-```
-TfidfVectorizer() → LogisticRegression(max_iter=1000)
-```
-
-Report on validation (via `StratifiedKFold(n_splits=5, shuffle=True)`):
-
-- accuracy,
-- **macro-F1** (headline metric for an imbalanced 4-class problem),
-- per-class precision and recall,
-- confusion matrix.
-
-### 4.2 Error analysis
-
-Dump every misclassified row with `(text, true_label, predicted_label,
-predicted_proba)`. Group errors by `(true, predicted)` pair. Expect:
-
-- `billing ↔ refund` — the hardest pair; both involve money.
-- `technical ↔ billing` — "the app crashes when I download my invoice".
-- `shipping ↔ refund` — "I returned the parcel but tracking hasn't updated".
-
-For each confused pair, decide whether it is a **model** problem or a
-**labeling** problem. If a row's label contradicts the rules in §2, fix the
-row. If it doesn't, the model needs better features (see 4.3).
-
-### 4.3 Unigrams vs bigrams
-
-```
-TfidfVectorizer(ngram_range=(1, 1))   vs   ngram_range=(1, 2)
-```
-
-Bigrams capture phrases like *"not arrived"*, *"charged twice"*,
-*"reset link"* — precisely the phrases that separate the overlapping classes.
-Expect a small but real macro-F1 improvement at the cost of a larger
-vocabulary.
-
-### 4.4 Class weighting
-
-```
-LogisticRegression()   vs   LogisticRegression(class_weight="balanced")
-```
-
-`class_weight="balanced"` reweights the loss by inverse class frequency. It
-usually **raises macro-F1 and per-class recall for `shipping`** (the smallest
-class) while **lowering accuracy slightly** (because it stops over-predicting
-`billing`). That trade-off is the point of choosing macro-F1 as the headline
-metric.
-
-### 4.5 Regularisation tuning
-
-Sweep `C` on the **validation** set only:
-
-```
-C ∈ {0.01, 0.03, 0.1, 0.3, 1, 3, 10}
-```
-
-Pick the value that maximises validation macro-F1 (or the value at the
-"elbow" of the curve). Plot validation macro-F1 vs `C` — a smooth curve is
-expected, not a single lucky peak.
-
-### 4.6 Final evaluation
-
-Freeze the configuration. Fit on `train + validation`. Evaluate **once** on
-`test`. Report:
-
-- accuracy,
-- macro-F1,
-- per-class precision / recall,
-- confusion matrix.
-
-Do not tune after this number. If you want to try something new, restart
-from the validation stage — never from the test stage.
+1. **Baseline** — `TfidfVectorizer` + `LogisticRegression(max_iter=1000)`. Report accuracy, macro-F1, per-class precision/recall, confusion matrix.
+2. **Error analysis** — dump every misclassified row with predicted probabilities. Group by (true, predicted) pair. Expected confusions: `billing <-> refund`, `technical <-> billing`, `shipping <-> refund`.
+3. **Unigrams vs bigrams** — compare `ngram_range=(1,1)` to `(1,2)`. Bigrams capture "not arrived", "charged twice", "reset link".
+4. **Class weighting** — compare `LogisticRegression()` to `class_weight="balanced"`. Balanced raises macro-F1 for `shipping` at the cost of accuracy.
+5. **Regularisation** — sweep `C` in {0.01, 0.03, 0.1, 0.3, 1, 3, 10} on validation only. Pick by validation macro-F1.
+6. **Final eval** — freeze config, fit on train + validation, evaluate once on test.
 
 ---
 
-## 5. Baselines and comparisons
+## Baselines
 
-| Model | Parameters | Notes |
-|---|---|---|
-| **Dummy (majority class)** | 0 | Predicts `billing` for everything. Accuracy ≈ 35 %, macro-F1 ≈ 0.1. Any real model must beat this. |
-| **TF-IDF + LogisticRegression** | ~2 k | Strong baseline for short text at small scale. |
-| **PyTorch MLP** | ~32 k | `Linear(n_features, 64) → ReLU → Dropout(0.3) → Linear(64, 4)`. Over-parameterised for 160 rows; expected to underperform LR at this size. |
+```
+Dummy (majority class)           0 params       ~35% accuracy, ~0.1 macro-F1
+TF-IDF + LogisticRegression     ~2k params      strong baseline at this scale
+PyTorch MLP                     ~32k params     over-parameterised for 160 rows
+```
 
-At ~160 training rows, **logistic regression is expected to beat the MLP**.
-The MLP is included to demonstrate the training loop, not because it wins.
-Once the dataset grows to 1,000+ rows, the comparison becomes meaningful and
-the MLP may become competitive.
+At ~160 training rows, logistic regression is expected to beat the MLP. The MLP demonstrates the training loop; it is not expected to win until the dataset grows past ~1,000 rows.
 
 ---
 
-## 6. Reproducing the results
+## Reproducing
 
-```bash
-# 1. Environment
+```
 python -m venv .venv
-. .venv/Scripts/activate          # Windows
+.venv\Scripts\activate
 pip install pandas scikit-learn torch jupyter
 
-# 2. Dataset
-# (checked in at data/tickets.csv; to regenerate:)
 python scripts/make_tickets.py
-
-# 3. Baselines
-jupyter notebook notebooks/classifier.ipynb
-
-# 4. PyTorch MLP
 jupyter notebook buisness_ML/training/train_DL.ipynb
 ```
 
-Every experiment uses `random_state=42`. Changing it changes the folds and
-therefore the reported numbers — pin it for comparability.
+All experiments use `random_state=42`. Pin it for comparability.
 
 ---
 
-## 7. What is *not* in scope (yet)
+## Done when
 
-These belong to later milestones and are deliberately kept out of the
-classifier work:
-
-- **RAG pipeline** — retrieval over policy documents (`business_rag/`).
-- **FastAPI service** — HTTP endpoints around the classifier (`app.py`).
-- **Production hardening** — time-based test splits, label noise handling,
-  monitoring, and drift detection.
-
-The classifier milestone is considered complete when:
-
-- [ ] baseline reports accuracy, macro-F1, per-class metrics, and confusion matrix,
-- [ ] misclassified rows are inspected and the overlap pairs are documented,
-- [ ] unigram vs bigram comparison is complete,
-- [ ] `class_weight="balanced"` comparison is complete,
-- [ ] `C` is tuned on validation only,
-- [ ] the final model is evaluated once on test,
-- [ ] results are written up in the notebook with a one-paragraph conclusion.
+- Baseline reports accuracy, macro-F1, per-class metrics, confusion matrix.
+- Misclassified rows inspected and overlap pairs documented.
+- Unigram vs bigram comparison complete.
+- `class_weight="balanced"` comparison complete.
+- `C` tuned on validation only.
+- Final model evaluated once on test.
+- Results written up with a one-paragraph conclusion.
 
 ---
 
-## 8. Key takeaways
+## Out of scope (later milestones)
 
-- **Write labeling rules before the data.** Ambiguous tickets will be labeled
-  inconsistently otherwise, and no model can recover from that.
-- **Macro-F1, not accuracy, is the metric** for an imbalanced 4-class problem.
-  Accuracy is dominated by `billing`; macro-F1 exposes whether the other classes
-  work.
-- **Stratify and group splits.** Stratification keeps classes balanced; grouping
-  by fingerprint keeps near-duplicates on the same side.
-- **Baselines first.** The dummy majority-class baseline tells you the floor.
-  The logistic regression baseline tells you the ceiling at this data size.
-- **Don't tune on test.** The test set is an *estimate of unseen-data
-  performance*. Every peek spends that estimate.
+- RAG over policy documents (`business_rag/`)
+- FastAPI endpoints (`app.py`)
+- Time-based splits, label noise handling, drift monitoring
+
+---
+
+## Key takeaways
+
+- Write labeling rules before the data, or labels drift and no model can recover.
+- Macro-F1, not accuracy, is the metric for an imbalanced 4-class problem.
+- Stratify splits and group near-duplicates into the same fold.
+- Baselines first: dummy majority class gives the floor, logistic regression gives the ceiling at this size.
+- Don't tune on test. Every peek spends that estimate.
 ```
 
-## Where to save it and commit it
+## Commit
 
 ```powershell
-# from project root
-notepad README.md          # paste the content, save
 git add README.md
-git commit -m "Add README documenting dataset design and experiment plan"
+git commit -m "Add README with dataset design and experiment plan"
 git push
 ```
 
-
+Then re-save the file from VS Code (bottom-right status bar → click `CRLF` → choose `LF`) and recommit.
