@@ -1,0 +1,162 @@
+ticket_text,category
+I want a refund for my cancelled order,refund
+Please return my money for the damaged item,refund
+I want to return a defective product,refund
+I need my money back for the order I returned,refund
+Please process a refund for my duplicate payment,refund
+The product arrived broken and I want a refund,refund
+Can I get a refund for the item that never shipped,refund
+I returned the item last week but no refund yet,refund
+The refund I was promised has not appeared,refund
+I want to cancel my order and get my money back,refund
+The item is defective please refund my purchase,refund
+I am requesting a full refund for this damaged product,refund
+My order was cancelled but I was still charged,refund
+I need a refund because the product does not match the description,refund
+Please refund the amount for the missing item,refund
+I want to return this and receive a refund,refund
+The refund was issued but I never received it,refund
+I am unhappy with the product and want my money back,refund
+The item arrived damaged please process a refund,refund
+I returned the parcel but the tracking status hasn't changed,refund
+The refund was approved but never reached my bank,refund
+I want to return a gift I received,refund
+Where is my refund it has been two weeks,refund
+The refund amount is less than what I paid,refund
+I was told I would get a refund but nothing happened,refund
+Please cancel and refund the duplicate purchase,refund
+My return was accepted but no refund was issued,refund
+I sent the item back and need my refund confirmed,refund
+The product is faulty I would like a replacement or refund,refund
+I need a refund for the broken glass in my delivery,refund
+The size is wrong and I want to return it for a refund,refund
+I was charged for an item that was out of stock,refund
+Please reverse the charge for the duplicate order,refund
+I cancelled within the return window but was not refunded,refund
+Please issue a refund to my original payment method,refund
+I would like to send back the faulty item for a refund,refund
+The product stopped working after one day and I want a refund,refund
+I paid for two but only received one please refund the difference,refund
+The item was not as advertised and I want my money back,refund
+The refund I requested has not been credited yet,refund
+My payment was deducted twice,billing
+The invoice contains an incorrect amount,billing
+I was charged for a subscription I cancelled,billing
+I was billed twice for the same order please refund,billing
+The subscription charge is incorrect,billing
+My invoice shows the wrong total,billing
+I was charged after cancelling my subscription,billing
+The payment failed but money was still deducted,billing
+I see an unexpected charge on my credit card,billing
+My billing statement does not match my order,billing
+I was charged full price instead of the discount,billing
+The invoice has an incorrect tax amount,billing
+I need a corrected invoice for my purchase,billing
+I was billed for an item I did not order,billing
+My payment method was charged twice in error,billing
+The subscription renewal charge was too high,billing
+I received a bill for a cancelled plan,billing
+The amount on my receipt is wrong,billing
+I was charged a late fee that I do not owe,billing
+My credit card was charged without authorization,billing
+The invoice number does not match my records,billing
+I need to update my billing information,billing
+I was charged for shipping twice,billing
+The discount code was not applied to my bill,billing
+My account was charged for an expired subscription,billing
+I need a refund of the overpayment on my invoice,billing
+The billing address on my invoice is incorrect,billing
+I was charged an extra fee that was not disclosed,billing
+I was charged twice and want my money back,billing
+Cancel my subscription before the next payment,billing
+I am being charged for a plan I never signed up for,billing
+My card was declined but the order shows paid,billing
+Why was I billed again this month,billing
+The price at checkout did not match my invoice,billing
+I need a VAT invoice for my company,billing
+I was billed for shipping twice on the same order,billing
+The refund I requested was processed as a charge instead,billing
+My monthly bill increased without notice,billing
+I was charged a currency conversion fee unexpectedly,billing
+The promotional discount is missing from my invoice,billing
+I was billed for a returned item,billing
+I cannot log in to my account,technical
+The application crashes when I open it,technical
+The password reset link is not working,technical
+The application will not load,technical
+I keep getting an error message when I save,technical
+The website is down and I cannot access it,technical
+My account is locked and I cannot reset it,technical
+The mobile app crashes on startup,technical
+I cannot upload files to the platform,technical
+The login page keeps refreshing,technical
+I get a 500 error when I submit the form,technical
+The search function does not return results,technical
+I cannot connect to the service from my browser,technical
+The software freezes when I click save,technical
+My password reset email never arrives,technical
+The dashboard does not display any data,technical
+I cannot update my profile settings,technical
+The system logs me out automatically,technical
+The export button does not work,technical
+I receive a timeout error during checkout,technical
+The notification settings will not save,technical
+The app shows a blank screen after login,technical
+I cannot verify my email address,technical
+The two factor authentication code is rejected,technical
+The page loads forever and never finishes,technical
+I get an unknown error when uploading a photo,technical
+The report generation feature is broken,technical
+My session expires too quickly,technical
+The API returns an error when I call it,technical
+I cannot download my invoice as a PDF,technical
+The app crashes when I try to download my invoice,technical
+I cannot access my account after changing my password,technical
+The filter options do not apply correctly,technical
+The chat support widget does not open,technical
+The app logs me out every time I open a new tab,technical
+The refund page keeps displaying an error,technical
+The login button is greyed out,technical
+The upload progress bar gets stuck at ninety percent,technical
+The mobile app will not sync my data,technical
+I get a CORS error when calling the API,technical
+My package has not arrived,shipping
+My delivery is delayed by three days,shipping
+I received the wrong product in my order,shipping
+My delivery is late again,shipping
+The tracking number is not updating,shipping
+My parcel was marked delivered but never arrived,shipping
+I received a different item than I ordered,shipping
+The package arrived damaged in transit,shipping
+My order is stuck at the warehouse,shipping
+The courier left my package at the wrong address,shipping
+I need to change my delivery address,shipping
+My shipment has been in transit for two weeks,shipping
+The estimated delivery date keeps changing,shipping
+I received only part of my order,shipping
+The box was empty when it arrived,shipping
+My order was delivered to the wrong address,shipping
+I have not received any shipping confirmation,shipping
+The delivery driver did not ring the bell,shipping
+My package is delayed due to weather,shipping
+I need to reschedule my delivery,shipping
+The courier tried to deliver when I was not home,shipping
+My package was left with a neighbour without notice,shipping
+The tracking link from the email is broken,shipping
+My order was returned to sender by mistake,shipping
+I was charged for express shipping but it arrived late,shipping
+The delivery window keeps moving to a later date,shipping
+My parcel shows no tracking updates for a week,shipping
+The courier marked my order delivered but I was home all day,shipping
+My order is stuck in customs,shipping
+I received a notice that the address was incomplete,shipping
+The delivery was supposed to be today but it is not here,shipping
+My package has been at the sorting facility for five days,shipping
+The box was crushed when it arrived,shipping
+I need the courier to call before delivering,shipping
+My order was split and only one parcel arrived,shipping
+The shipping confirmation lists the wrong address,shipping
+My package was left outside and got stolen,shipping
+The driver delivered to the building next door,shipping
+My order has been in transit longer than the estimate,shipping
+I paid for next day delivery but it has been three days,shipping
